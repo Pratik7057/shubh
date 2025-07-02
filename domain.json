@@ -1,13 +1,3 @@
 {
-  "domains": [
-    {
-      "domain": "www.radhaapi.me",
-      "type": "PRIMARY"
-    },
-    {
-      "domain": "radhaapi.me",
-      "type": "REDIRECT",
-      "target": "www.radhaapi.me"
-    }
-  ]
+  "domains": []
 }
