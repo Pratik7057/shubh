@@ -92,7 +92,7 @@ async def health():
     return {
         "status": "healthy", 
         "service": "radha-api", 
-        "domain": "www.radhaapi.me",
+        "domain": "web-production-3c26.up.railway.app",
         "database": db_status
     }
 
@@ -323,7 +323,7 @@ async def debug_info(request: Request):
                 "environment": {k: v for k, v in os.environ.items() if k.lower() in 
                               ['port', 'host', 'railway_static_url', 'railway_environment', 
                                'python_env', 'path', 'server_software']},
-                "domain": "www.radhaapi.me",
+                "domain": "web-production-3c26.up.railway.app",
             },
             "request_info": {
                 "client_ip": client_host,
