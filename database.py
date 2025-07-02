@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import os
 import logging
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class Database:
         """Connect to MongoDB database"""
         try:
             # Get MongoDB URI from environment variable or use default for local development
-            mongo_uri = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/radhaapi")
+            mongo_uri = os.environ.get("MONGODB_URI", "mongodb+srv://siposa3877:EMH102vAjWIXyAlN@radha.mylsabd.mongodb.net/?retryWrites=true&w=majority")
             
             # Connect to MongoDB
             self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
