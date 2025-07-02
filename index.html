@@ -257,7 +257,7 @@
             </div>
             
             <div class="code">
-curl -X GET "http://localhost:8002/get-audio?query=your+search+query" \
+curl -X GET "https://web-production-3c26.up.railway.app/get-audio?query=your+search+query" \
      -H "Authorization: Bearer YOUR_API_KEY"</div>
             
             <p><strong>Response:</strong></p>
@@ -274,13 +274,13 @@ curl -X GET "http://localhost:8002/get-audio?query=your+search+query" \
                 <p><strong>Authentication:</strong> Not required</p>
             </div>
             
-            <div class="code">curl -X GET "http://localhost:8002/generate-api-key-temp"</div>
+            <div class="code">curl -X GET "https://web-production-3c26.up.railway.app/generate-api-key-temp"</div>
         </div>
     </div>
     
     <script>
         // LOCAL TESTING: Set the API base URL to the local server
-        const API_BASE_URL = 'http://localhost:8002';
+        const API_BASE_URL = 'https://web-production-3c26.up.railway.app';
         
         // Get and display the default API key
         async function getDefaultApiKey() {
