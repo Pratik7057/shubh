@@ -58,7 +58,7 @@ def start_server():
 
 def open_dashboard():
     """Open the dashboard in the default web browser."""
-    url = "http://localhost:8001"
+    url = "https://web-production-3c26.up.railway.app"
     print(f"Opening dashboard at {url}")
     webbrowser.open(url)
 
