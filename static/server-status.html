@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radha API - Server Status</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #5a67d8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .status-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-online {
+            background-color: #48bb78;
+            box-shadow: 0 0 10px rgba(72, 187, 120, 0.7);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-offline {
+            background-color: #f56565;
+            box-shadow: 0 0 10px rgba(245, 101, 101, 0.7);
+        }
+        
+        .status-text {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .details-table th,
+        .details-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .details-table th {
+            background-color: #f7fafc;
+            font-weight: bold;
+        }
+        
+        .endpoint-card {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .endpoint-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .endpoint-status {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #5a67d8, #667eea);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 0 auto;
+            width: auto;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(90, 103, 216, 0.4);
+        }
+        
+        .refresh-time {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 10px;
+            color: #666;
+        }
+        
+        .debug-section {
+            margin-top: 20px;
+        }
+        
+        .debug-section pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Radha API - Server Status</h1>
+            
+            <div class="status-section">
+                <span id="mainStatusIndicator" class="status-indicator status-offline"></span>
+                <span id="mainStatusText" class="status-text">Checking API Status...</span>
+            </div>
+            
+            <h2 style="text-align: center; margin-bottom: 20px;">Endpoint Health</h2>
+            
+            <div id="endpointStatuses"></div>
+            
+            <div id="debugInfo" class="debug-section" style="display: none;">
+                <h2 style="margin: 20px 0;">Debug Information</h2>
+                <pre id="debugOutput">Loading debug information...</pre>
+            </div>
+            
+            <button id="refreshBtn" class="btn">Refresh Status</button>
+            <div class="refresh-time">Last checked: <span id="lastCheckedTime">Never</span></div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="toggleDebugBtn" class="btn" style="background: #718096; margin-top: 10px;">Show Debug Info</button>
+            </div>
+        </div>
+        
+        <div class="links">
+            <a href="/">Back to Dashboard</a>
+            <a href="/status">Simple Status</a>
+        </div>
+    </div>
+    
+    <script>
+        // API Base URL - replace with your actual API URL
+        const API_BASE_URL = 'https://www.radhaapi.me';
+        
+        // Endpoints to check
+        const endpoints = [
+            { name: 'Health Check', path: '/health', critical: true },
+            { name: 'API Root', path: '/api', critical: true },
+            { name: 'Generate API Key', path: '/generate-api-key-temp', critical: true },
+            { name: 'Status Page', path: '/status', critical: false }
+        ];
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAllEndpoints();
+            
+            // Set up refresh button
+            document.getElementById('refreshBtn').addEventListener('click', checkAllEndpoints);
+            
+            // Set up debug toggle button
+            document.getElementById('toggleDebugBtn').addEventListener('click', toggleDebugInfo);
+        });
+        
+        // Function to toggle debug info
+        function toggleDebugInfo() {
+            const debugSection = document.getElementById('debugInfo');
+            const toggleBtn = document.getElementById('toggleDebugBtn');
+            
+            if (debugSection.style.display === 'none') {
+                debugSection.style.display = 'block';
+                toggleBtn.textContent = 'Hide Debug Info';
+                fetchDebugInfo();
+            } else {
+                debugSection.style.display = 'none';
+                toggleBtn.textContent = 'Show Debug Info';
+            }
+        }
+        
+        // Function to check all endpoints
+        async function checkAllEndpoints() {
+            updateLastCheckedTime();
+            
+            // Check each endpoint
+            const endpointStatuses = document.getElementById('endpointStatuses');
+            endpointStatuses.innerHTML = '';
+            
+            const results = await Promise.all(
+                endpoints.map(endpoint => checkEndpoint(endpoint))
+            );
+            
+            // Update main status based on critical endpoints
+            const criticalEndpoints = results.filter(result => result.endpoint.critical);
+            const allCriticalUp = criticalEndpoints.every(result => result.status === 'online');
+            
+            updateMainStatus(allCriticalUp ? 'online' : 'offline');
+            
+            // Display each endpoint status
+            results.forEach(result => {
+                const endpointCard = document.createElement('div');
+                endpointCard.className = 'endpoint-card';
+                
+                endpointCard.innerHTML = `
+                    <div class="endpoint-name">${result.endpoint.name}</div>
+                    <div class="endpoint-status">
+                        <span class="status-indicator ${result.status === 'online' ? 'status-online' : 'status-offline'}" 
+                              style="width: 10px; height: 10px;"></span>
+                        <span style="margin-left: 5px;">${result.status === 'online' ? 'Online' : 'Offline'}</span>
+                        <span style="margin-left: 10px; color: #666;">Response time: ${result.responseTime}ms</span>
+                    </div>
+                `;
+                
+                endpointStatuses.appendChild(endpointCard);
+            });
+        }
+        
+        // Function to check a single endpoint
+        async function checkEndpoint(endpoint) {
+            const startTime = performance.now();
+            let status = 'offline';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint.path}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    mode: 'cors',
+                    cache: 'no-store',
+                    timeout: 5000
+                });
+                
+                if (response.ok) {
+                    status = 'online';
+                }
+            } catch (error) {
+                console.error(`Error checking ${endpoint.path}:`, error);
+                status = 'offline';
+            }
+            
+            const endTime = performance.now();
+            const responseTime = Math.round(endTime - startTime);
+            
+            return {
+                endpoint,
+                status,
+                responseTime
+            };
+        }
+        
+        // Function to update the main status display
+        function updateMainStatus(status) {
+            const mainStatusIndicator = document.getElementById('mainStatusIndicator');
+            const mainStatusText = document.getElementById('mainStatusText');
+            
+            if (status === 'online') {
+                mainStatusIndicator.className = 'status-indicator status-online';
+                mainStatusText.textContent = 'API Online';
+            } else {
+                mainStatusIndicator.className = 'status-indicator status-offline';
+                mainStatusText.textContent = 'API Offline';
+            }
+        }
+        
+        // Function to update the last checked time
+        function updateLastCheckedTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('lastCheckedTime').textContent = timeString;
+        }
+        
+        // Function to fetch debug info
+        async function fetchDebugInfo() {
+            const debugOutput = document.getElementById('debugOutput');
+            debugOutput.textContent = 'Fetching debug information...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/debug-info`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    mode: 'cors',
+                    cache: 'no-store'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    debugOutput.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    debugOutput.textContent = 'Error fetching debug information: ' + response.statusText;
+                }
+            } catch (error) {
+                debugOutput.textContent = 'Error fetching debug information: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

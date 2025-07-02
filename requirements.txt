@@ -1,0 +1,16 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+yt-dlp==2023.12.30
+python-multipart==0.0.6
+pydantic==2.5.2
+requests>=2.32.2
+gunicorn==21.2.0
+python-jose[cryptography]==3.3.0
+# Added for Render deployment
+aiofiles==23.2.1
+jinja2==3.1.2
+httpx==0.24.1
+# Added for CORS support
+starlette>=0.27.0
+# Added for MongoDB support
+pymongo>=4.5.0

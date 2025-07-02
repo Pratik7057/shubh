@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        pre {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Radha API Test</h1>
+    
+    <div>
+        <h2>1. Check API Health</h2>
+        <button id="healthCheck">Check Health</button>
+        <pre id="healthResult">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>2. Generate API Key</h2>
+        <button id="generateKey">Generate Key</button>
+        <pre id="keyResult">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>3. Test Audio Search</h2>
+        <p>
+            <label for="apiKeyInput">API Key:</label>
+            <input type="text" id="apiKeyInput" style="width: 300px;" placeholder="Enter API key here">
+        </p>
+        <p>
+            <label for="queryInput">Search Query:</label>
+            <input type="text" id="queryInput" value="imagine dragons believer" style="width: 300px;">
+        </p>
+        <button id="searchAudio">Search Audio</button>
+        <pre id="audioResult">Results will appear here...</pre>
+    </div>
+    
+    <script>
+        const API_BASE_URL = 'http://localhost:8002';
+        
+        // Health Check
+        document.getElementById('healthCheck').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.textContent = 'Checking...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        // Generate API Key
+        document.getElementById('generateKey').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('keyResult');
+            resultDiv.textContent = 'Generating API key...';
+            
+            try {
+                // Try GET method first
+                const response = await fetch(`${API_BASE_URL}/generate-api-key-temp`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                
+                // Auto-fill the API key input
+                document.getElementById('apiKeyInput').value = data.api_key;
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        // Search Audio
+        document.getElementById('searchAudio').addEventListener('click', async () => {
+            const apiKey = document.getElementById('apiKeyInput').value;
+            const query = document.getElementById('queryInput').value;
+            const resultDiv = document.getElementById('audioResult');
+            
+            if (!apiKey || !query) {
+                resultDiv.textContent = 'Please enter both API key and search query';
+                return;
+            }
+            
+            resultDiv.textContent = 'Searching...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-audio?query=${encodeURIComponent(query)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                    resultDiv.textContent = `Error: ${errorData.detail || response.statusText}`;
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

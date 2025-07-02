@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radha API - Dashboard (Local Test)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .audio-preview {
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-online {
+            background-color: #48bb78;
+        }
+        
+        .status-offline {
+            background-color: #f56565;
+        }
+        
+        .card h2 {
+            color: #5a67d8;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #5a67d8, #667eea);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(90, 103, 216, 0.4);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #5a67d8;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .success {
+            background: #f0fff4;
+            border: 1px solid #68d391;
+            color: #2d7738;
+        }
+        
+        .error {
+            background: #fed7d7;
+            border: 1px solid #fc8181;
+            color: #c53030;
+        }
+        
+        .api-key {
+            background: #edf2f7;
+            border: 1px solid #cbd5e0;
+            color: #2d3748;
+            font-size: 14px;
+        }
+        
+        .copy-btn {
+            background: #48bb78;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-left: 10px;
+            width: auto;
+            display: inline-block;
+        }
+        
+        .endpoint-info {
+            background: #f7fafc;
+            border-left: 4px solid #5a67d8;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .endpoint-info h3 {
+            color: #5a67d8;
+            margin-bottom: 10px;
+        }
+        
+        .code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        #defaultApiKey {
+            font-family: 'Courier New', monospace;
+            background: #edf2f7;
+            padding: 8px 12px;
+            border-radius: 5px;
+            color: #2d3748;
+            margin-top: 10px;
+            border: 1px dashed #cbd5e0;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Radha API (Local Testing)</h1>
+            <p>YouTube Audio API for Music Bots</p>
+            <div style="margin-top: 10px;">
+                <span id="statusIndicator" class="status-indicator"></span>
+                <span id="statusText">Checking API status...</span>
+                <button onclick="checkApiStatus()" style="margin-left: 10px; padding: 5px 10px; font-size: 12px; background: #48bb78; color: white; border: none; border-radius: 4px; cursor: pointer;">Check Status</button>
+                <a href="/server-status" style="margin-left: 10px; padding: 5px 10px; font-size: 12px; background: #5a67d8; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block;">Detailed Status</a>
+            </div>
+            <div id="defaultApiKey"></div>
+        </header>
+        
+        <div class="dashboard">
+            <!-- API Key Generator -->
+            <div class="card">
+                <h2>🔐 API Key Generator</h2>
+                <p style="margin-bottom: 20px;">Generate a new API key to access the audio endpoints.</p>
+                <button class="btn" onclick="generateApiKey()">Generate New API Key</button>
+                <div id="apiKeyResult"></div>
+            </div>
+            
+            <!-- Audio API Tester -->
+            <div class="card">
+                <h2>🎵 Test Audio API</h2>
+                <div class="input-group">
+                    <label for="apiKey">API Key:</label>
+                    <input type="text" id="apiKey" placeholder="Enter your API key">
+                </div>
+                <div class="input-group">
+                    <label for="query">Search Query:</label>
+                    <input type="text" id="query" placeholder="e.g., Imagine Dragons Believer">
+                </div>
+                <button class="btn" onclick="testAudioApi()">Get Audio URL</button>
+                <div id="audioResult"></div>
+            </div>
+        </div>
+        
+        <!-- API Documentation -->
+        <div class="card">
+            <h2>📚 API Documentation</h2>
+            
+            <div class="endpoint-info">
+                <h3>GET /get-audio</h3>
+                <p><strong>Description:</strong> Get YouTube audio URL for a search query</p>
+                <p><strong>Authentication:</strong> Required (Bearer token in Authorization header)</p>
+                <p><strong>Parameters:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li><code>query</code> (required): YouTube search query</li>
+                </ul>
+            </div>
+            
+            <div class="code">
+curl -X GET "http://localhost:8002/get-audio?query=your+search+query" \
+     -H "Authorization: Bearer YOUR_API_KEY"</div>
+            
+            <p><strong>Response:</strong></p>
+            <div class="code">{
+  "title": "Song title",
+  "duration": 230,
+  "audio_url": "https://...",
+  "thumbnail": "https://..."
+}</div>
+            
+            <div class="endpoint-info">
+                <h3>GET /generate-api-key-temp</h3>
+                <p><strong>Description:</strong> Generate a new API key</p>
+                <p><strong>Authentication:</strong> Not required</p>
+            </div>
+            
+            <div class="code">curl -X GET "http://localhost:8002/generate-api-key-temp"</div>
+        </div>
+    </div>
+    
+    <script>
+        // LOCAL TESTING: Set the API base URL to the local server
+        const API_BASE_URL = 'http://localhost:8002';
+        
+        // Get and display the default API key
+        async function getDefaultApiKey() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('defaultApiKey').textContent = `Default API Key: ${data.key}`;
+                    // Auto-fill the API key in the tester
+                    document.getElementById('apiKey').value = data.key;
+                }
+            } catch (error) {
+                console.error('Failed to get default API key:', error);
+            }
+        }
+        
+        // Check API status on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkApiStatus();
+            getDefaultApiKey();
+        });
+        
+        // Function to check API status
+        async function checkApiStatus() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const troubleshootingDiv = document.getElementById('troubleshootingSection');
+            
+            try {
+                console.log('Checking API status...');
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    cache: 'no-store'
+                });
+                
+                console.log('API status response:', response);
+                
+                if (response.ok) {
+                    statusIndicator.className = 'status-indicator status-online';
+                    statusText.textContent = 'API Online';
+                    console.log('API is online');
+                    
+                    // Hide troubleshooting section if it exists
+                    if (troubleshootingDiv) {
+                        troubleshootingDiv.style.display = 'none';
+                    }
+                } else {
+                    throw new Error('API returned error status');
+                }
+            } catch (error) {
+                console.error('API status check failed:', error);
+                statusIndicator.className = 'status-indicator status-offline';
+                statusText.textContent = 'API Offline';
+                
+                // Show troubleshooting section
+                showTroubleshootingSection();
+            }
+        }
+        
+        function showTroubleshootingSection() {
+            // Check if troubleshooting section already exists
+            let troubleshootingDiv = document.getElementById('troubleshootingSection');
+            
+            if (!troubleshootingDiv) {
+                // Create troubleshooting section if it doesn't exist
+                troubleshootingDiv = document.createElement('div');
+                troubleshootingDiv.id = 'troubleshootingSection';
+                troubleshootingDiv.className = 'card';
+                troubleshootingDiv.innerHTML = `
+                    <h2>⚠️ API Status: Offline</h2>
+                    <p>The Radha API appears to be offline. Here are some troubleshooting steps:</p>
+                    <ol style="text-align: left; margin: 20px;">
+                        <li>Check if the server is running locally by running <code>python main.py</code> in the terminal.</li>
+                        <li>Check if port 8002 is available or change to another port.</li>
+                        <li>Check internet connectivity on your device.</li>
+                        <li>Try accessing the API directly at <a href="${API_BASE_URL}/health" target="_blank">${API_BASE_URL}/health</a></li>
+                        <li>Check application logs for any errors.</li>
+                    </ol>
+                    <button class="btn" onclick="checkApiStatus()">Check Again</button>
+                `;
+                
+                // Insert after the dashboard section
+                const dashboardSection = document.querySelector('.dashboard');
+                dashboardSection.parentNode.insertBefore(troubleshootingDiv, dashboardSection.nextSibling);
+            } else {
+                // Show the existing section
+                troubleshootingDiv.style.display = 'block';
+            }
+        }
+        
+        async function generateApiKey() {
+            const resultDiv = document.getElementById('apiKeyResult');
+            resultDiv.innerHTML = '<div>Generating API key...</div>';
+            console.log("Attempting to generate API key...");
+            
+            try {
+                console.log(`Sending request to ${API_BASE_URL}/generate-api-key-temp`);
+                const getResponse = await fetch(`${API_BASE_URL}/generate-api-key-temp`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    cache: 'no-store'
+                });
+                
+                console.log("GET response status:", getResponse.status);
+                
+                if (getResponse.ok) {
+                    const data = await getResponse.json();
+                    console.log("API key generated successfully:", data);
+                    displayApiKey(data, resultDiv);
+                } else {
+                    console.error("GET failed with status:", getResponse.status);
+                    throw new Error(`HTTP error! status: ${getResponse.status}`);
+                }
+            } catch (error) {
+                console.error("API key generation failed:", error);
+                resultDiv.innerHTML = `
+                    <div class="result error">Error: ${error.message}</div>
+                    <div class="result error">
+                        <p>Troubleshooting:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Check if the server is running</li>
+                            <li>Check your network connection</li>
+                            <li>Try the default API key shown at the top</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayApiKey(data, resultDiv) {
+            resultDiv.innerHTML = `
+                <div class="result success">
+                    API Key Generated Successfully!
+                    <button class="copy-btn" onclick="copyToClipboard('${data.api_key}')">Copy</button>
+                </div>
+                <div class="result api-key">${data.api_key}</div>
+            `;
+            
+            // Auto-fill the API key in the tester
+            document.getElementById('apiKey').value = data.api_key;
+        }
+        
+        async function testAudioApi() {
+            const apiKey = document.getElementById('apiKey').value;
+            const query = document.getElementById('query').value;
+            const resultDiv = document.getElementById('audioResult');
+            
+            if (!apiKey || !query) {
+                resultDiv.innerHTML = '<div class="result error">Please enter both API key and search query</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div>Searching for audio...</div>';
+            console.log(`Testing audio API with query: ${query}`);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-audio?query=${encodeURIComponent(query)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log("Audio search response status:", response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Audio search successful:", data);
+                    resultDiv.innerHTML = `
+                    <div class="result success">
+                        <strong>Success!</strong><br>
+                        Title: ${data.title}
+                        Duration: ${data.duration} seconds
+                        Audio URL: ${data.audio_url}
+                        Thumbnail: ${data.thumbnail}
+                    </div>
+                    <div class="audio-preview">
+                        <img src="${data.thumbnail}" alt="${data.title}" style="max-width: 100%; border-radius: 8px;">
+                    </div>`;
+                } else {
+                    console.error("Audio search failed with status:", response.status);
+                    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                    resultDiv.innerHTML = `<div class="result error">Error: ${errorData.detail || response.statusText}</div>`;
+                }
+            } catch (error) {
+                console.error("Audio search error:", error);
+                resultDiv.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('API key copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
