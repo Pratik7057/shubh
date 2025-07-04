@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, HTTPException, Depends, Header, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -67,15 +68,12 @@ async def health():
 # NEW: Bot-compatible endpoint
 @app.get("/api/song/{video_id}")
 async def get_song_by_id(video_id: str, api: str = Depends(verify_api_key_query)):
-    """Bot-compatible endpoint: /api/song/{video_id}?api={API_KEY}"""
     try:
         logger.info(f"Fetching song for video ID: {video_id}")
         
-        # Download the song using yt-dlp
         download_folder = "downloads"
         os.makedirs(download_folder, exist_ok=True)
         
-        # Check if file already exists
         for ext in ["mp3", "m4a", "webm"]:
             file_path = f"{download_folder}/{video_id}.{ext}"
             if os.path.exists(file_path):
@@ -86,7 +84,6 @@ async def get_song_by_id(video_id: str, api: str = Depends(verify_api_key_query)
                     "link": f"https://web-production-3c26.up.railway.app/download/{video_id}.{ext}"
                 }
         
-        # Download using yt-dlp
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         
         ydl_opts = {
@@ -100,15 +97,12 @@ async def get_song_by_id(video_id: str, api: str = Depends(verify_api_key_query)
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             try:
-                # Extract info first
                 info = ydl.extract_info(video_url, download=False)
                 title = info.get('title', 'Unknown')
                 duration = info.get('duration', 0)
                 
-                # Download the audio
                 ydl.download([video_url])
                 
-                # Find the downloaded file
                 for ext in ["mp3", "m4a", "webm"]:
                     file_path = f"{download_folder}/{video_id}.{ext}"
                     if os.path.exists(file_path):
@@ -130,7 +124,6 @@ async def get_song_by_id(video_id: str, api: str = Depends(verify_api_key_query)
         logger.error(f"Error in get_song_by_id: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to process song: {str(e)}")
 
-# File download endpoint
 @app.get("/download/{filename}")
 async def download_file(filename: str):
     file_path = f"downloads/{filename}"
@@ -143,15 +136,12 @@ async def download_file(filename: str):
     else:
         raise HTTPException(status_code=404, detail="File not found")
 
-# Original get-audio endpoint (Bearer token auth)
 @app.get("/get-audio")
 async def get_audio(query: str, _: str = Depends(verify_api_key_bearer)):
-    """Original endpoint: /get-audio?query={search_query} with Bearer token"""
     if not query.strip():
         raise HTTPException(status_code=400, detail="Query is empty")
 
     try:
-        # Search for the video
         import requests
         search_url = f"https://www.youtube.com/results?search_query={query.replace(' ', '+')}"
         headers = {
@@ -165,29 +155,21 @@ async def get_audio(query: str, _: str = Depends(verify_api_key_bearer)):
             raise HTTPException(status_code=404, detail="No videos found")
             
         video_id = video_ids[0]
-        video_url = f"https://www.youtube.com/watch?v={video_id}"
+
+        from fastapi.testclient import TestClient
+        client = TestClient(app)
+        api_key = DEFAULT_API_KEY
+        song_response = client.get(f"/api/song/{video_id}?api={api_key}")
+        song_data = song_response.json()
         
-        # Get video details
-        video_response = requests.get(video_url, headers=headers)
-        title_match = re.search(r'<title>(.*?) - YouTube</title>', video_response.text)
-        title = title_match.group(1) if title_match else "Unknown Title"
+        song_data["video_id"] = video_id
         
-        audio_url = f"https://music.youtube.com/watch?v={video_id}"
-        thumbnail = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
-        
-        return {
-            "title": title,
-            "duration": 240,
-            "audio_url": audio_url,
-            "thumbnail": thumbnail,
-            "video_id": video_id
-        }
+        return song_data
         
     except Exception as e:
         logger.error(f"Error fetching song: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch song: {str(e)}")
 
-# API key generation endpoints
 @app.get("/generate-api-key-temp")
 async def generate_api_temp():
     new_key = secrets.token_urlsafe(32)
