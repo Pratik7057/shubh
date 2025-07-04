@@ -9,6 +9,7 @@ import os
 import sys
 import logging
 import secrets
+from pymongo.errors import DuplicateKeyError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -50,17 +51,26 @@ def test_mongodb_connection():
             # Create index on key field
             db.api_keys.create_index('key', unique=True)
             logger.info("Created index on api_keys.key field")
-            
-            # Insert default API key
-            default_key = os.environ.get("DEFAULT_API_KEY") or secrets.token_urlsafe(32)
-            db.api_keys.insert_one({
-                "key": default_key,
-                "is_default": True,
-                "is_active": True
-            })
-            logger.info(f"Inserted default API key: {default_key[:5]}...")
+        
         else:
             logger.info("api_keys collection already exists")
+        
+        # Insert default API key only if not exists
+        default_key = os.environ.get("DEFAULT_API_KEY") or secrets.token_urlsafe(32)
+        existing_key = db.api_keys.find_one({"key": default_key})
+        
+        if not existing_key:
+            try:
+                db.api_keys.insert_one({
+                    "key": default_key,
+                    "is_default": True,
+                    "is_active": True
+                })
+                logger.info(f"Inserted default API key: {default_key[:5]}...")
+            except DuplicateKeyError:
+                logger.warning("API key already exists in DB (race condition), skipping insert.")
+        else:
+            logger.warning("Default API key already exists, skipping insert.")
         
         logger.info("MongoDB setup complete!")
         return True
