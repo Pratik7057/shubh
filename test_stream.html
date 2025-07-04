@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .example {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Stream API Test</h1>
+        
+        <div class="form-group">
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" placeholder="Click 'Get API Key' to generate one">
+            <button onclick="getApiKey()" style="margin-top: 10px;">Get API Key</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="videoId">YouTube Video ID:</label>
+            <input type="text" id="videoId" placeholder="e.g., dQw4w9WgXcQ" value="dQw4w9WgXcQ">
+            <div class="example">
+                Examples:
+                • dQw4w9WgXcQ (Rick Roll)
+                • 9bZkp7q19f0 (Gangnam Style)
+                • kJQP7kiw5Fk (Despacito)
+            </div>
+        </div>
+        
+        <button onclick="testStreamEndpoint()">Test Stream Endpoint</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        async function getApiKey() {
+            const resultDiv = document.getElementById('result');
+            const apiKeyInput = document.getElementById('apiKey');
+            
+            try {
+                resultDiv.innerHTML = '<div class="info">Generating API key...</div>';
+                
+                const response = await fetch(`${API_BASE}/generate-api-key-temp`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    apiKeyInput.value = data.api_key;
+                    resultDiv.innerHTML = `<div class="success">✅ API Key generated successfully!
+
+Key: ${data.api_key}</div>`;
+                } else {
+                    throw new Error(data.detail || 'Failed to generate API key');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error generating API key:
+
+${error.message}</div>`;
+            }
+        }
+        
+        async function testStreamEndpoint() {
+            const resultDiv = document.getElementById('result');
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const videoId = document.getElementById('videoId').value.trim();
+            
+            if (!apiKey) {
+                resultDiv.innerHTML = '<div class="error">❌ Please get an API key first!</div>';
+                return;
+            }
+            
+            if (!videoId) {
+                resultDiv.innerHTML = '<div class="error">❌ Please enter a YouTube video ID!</div>';
+                return;
+            }
+            
+            try {
+                resultDiv.innerHTML = '<div class="info">Testing stream endpoint...</div>';
+                
+                const response = await fetch(`${API_BASE}/api/get-stream?video_id=${videoId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="success">✅ Stream endpoint test successful!
+
+Response:
+${JSON.stringify(data, null, 2)}
+
+Stream URL: ${data.stream_url}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Stream endpoint test failed!
+
+Status: ${response.status}
+Error: ${data.detail || JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network error testing stream endpoint:
+
+${error.message}</div>`;
+            }
+        }
+        
+        // Auto-generate API key on page load
+        window.onload = function() {
+            getApiKey();
+        };
+    </script>
+</body>
+</html>
