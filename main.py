@@ -10,6 +10,9 @@ import logging
 from database import Database
 from database import Database
 
+# Import the audio router
+from routes import audio
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,6 +29,9 @@ app.add_middleware(
     expose_headers=["*"],  # Expose all headers
     max_age=3600  # Longer cache for preflight requests (1 hour)
 )
+
+# Include routers
+app.include_router(audio.router, prefix="/api")
 
 # Initialize database
 db = Database()
@@ -357,6 +363,10 @@ async def debug_info(request: Request):
 @app.get("/test")
 async def test_dashboard():
     return FileResponse("index_local.html")
+
+@app.get("/test-stream")
+async def test_stream_page():
+    return FileResponse("test_stream.html")
 
 if __name__ == "__main__":
     import uvicorn
